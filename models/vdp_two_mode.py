@@ -46,6 +46,14 @@ def build_sde(params: Dict):
 
 		D_alpha = D * (gamma_a / 2.0 + Gamma * (2.0 * xp.abs(alpha) ** 2 - 1.0))
 		D_beta = D * (gamma_b / 2.0)
+		# Ensure diffusion arrays are backend arrays with shape (n_traj,)
+		# D_alpha is typically array-like (depends on alpha), D_beta may be scalar
+		# Convert scalars to per-trajectory arrays so xp.clip works for all backends
+		n = y.shape[0]
+		if not hasattr(D_alpha, 'clip'):
+			D_alpha = xp.full((n,), float(D_alpha))
+		if not hasattr(D_beta, 'clip'):
+			D_beta = xp.full((n,), float(D_beta))
 		# Clip to non-negative for numerical stability
 		D_alpha = xp.clip(D_alpha, 0.0, None)
 		D_beta = xp.clip(D_beta, 0.0, None)

@@ -1,5 +1,5 @@
 profile:
-  backend: numpy       # B-class default
+  backend: numba       # B-class default
   solver: euler        # B-class default
   save:
     root: runs
@@ -22,9 +22,9 @@ profile:
 run:
   time:
     dt: 0.001          # C-class required
-    steps: 2000        # C-class required
+    steps: 200000        # C-class required
   trajectories:
-    n_traj: 10         # C-class required
+    n_traj: 100         # C-class required
     master_seed: 42    # C-class (optional); used to derive per-trajectory seeds
 
 jobs:

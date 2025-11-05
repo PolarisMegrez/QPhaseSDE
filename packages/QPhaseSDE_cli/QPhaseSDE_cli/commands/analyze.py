@@ -345,7 +345,13 @@ def psd(
 		for spec in psd_specs:
 			if isinstance(spec, dict):
 				spec.setdefault('kind', 'psd')
-			meta = render_from_spec(spec, data, t0=t0, dt=dt, outdir=out_dir, style_overrides=style_psd_cfg, save=True)
+			# select per-kind PSD style from profile.visualizer.psd mapping
+			per_kind_style = None
+			if isinstance(style_psd_cfg, dict):
+				k = spec.get('kind') if isinstance(spec, dict) else None
+				if k is not None:
+					per_kind_style = style_psd_cfg.get(str(k)) or style_psd_cfg.get(str(k).lower())
+			meta = render_from_spec(spec, data, t0=t0, dt=dt, outdir=out_dir, style_overrides=per_kind_style, save=True)
 			p = meta.get('path') if isinstance(meta, dict) else None
 			if p is not None:
 				saved.append(p)

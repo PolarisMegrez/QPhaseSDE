@@ -39,6 +39,51 @@ from QPhaseSDE.core.config import get_default
 from QPhaseSDE.core.errors import QPSConfigError, QPSIOError
 
 
+def _ruamel_to_python(obj):
+    """Recursively convert ruamel YAML data structures and scalar types into
+    native Python types (dict, list, int, float, str). This avoids leaking
+    ruamel.scalarfloat/ScalarInt objects to downstream validation layers.
+
+    The function is defensive: if ruamel is not available or an unknown type
+    is encountered, it falls back to returning the original object.
+    """
+    try:
+        # Import ruamel helper types if available
+        from ruamel.yaml.comments import CommentedMap, CommentedSeq  # type: ignore
+        from ruamel.yaml.scalarfloat import ScalarFloat  # type: ignore
+        from ruamel.yaml.scalarint import ScalarInt  # type: ignore
+    except Exception:
+        # ruamel not available; nothing to convert
+        return obj
+
+    # CommentedMap / CommentedSeq behave like dict/list but carry extra metadata
+    if isinstance(obj, CommentedMap):
+        return {(_ruamel_to_python(k) if not isinstance(k, str) else k): _ruamel_to_python(v) for k, v in obj.items()}
+    if isinstance(obj, CommentedSeq):
+        return [_ruamel_to_python(v) for v in obj]
+
+    # Scalar number wrappers
+    if isinstance(obj, ScalarFloat):
+        return float(obj)
+    if isinstance(obj, ScalarInt):
+        return int(obj)
+
+    # Plain dict/list (in case ruamel produced builtins)
+    if isinstance(obj, dict):
+        return {k: _ruamel_to_python(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_ruamel_to_python(v) for v in obj]
+
+    # Some ruamel scalar nodes expose a .value attribute
+    if hasattr(obj, 'value'):
+        try:
+            return _ruamel_to_python(obj.value)
+        except Exception:
+            pass
+
+    return obj
+
+
 def load_triad_config(path: str | Path) -> TriadConfig:
     """Load and validate a legacy triad configuration from a YAML file path."""
     p = Path(path)
@@ -46,6 +91,8 @@ def load_triad_config(path: str | Path) -> TriadConfig:
         yaml_loader = _yaml_loader_factory()
         with p.open("r", encoding="utf-8") as f:
             data = yaml_loader.load(f)
+        # Convert ruamel-specific scalar/map/seq types into native Python types
+        data = _ruamel_to_python(data)
     elif _YAML_BACKEND == 'pyyaml' and pyyaml is not None:
         with p.open("r", encoding="utf-8") as f:
             data = pyyaml.safe_load(f)  # type: ignore
@@ -178,6 +225,8 @@ def load_root_config(path: str | Path) -> RootConfig:
         yaml_loader = _yaml_loader_factory()
         with p.open("r", encoding="utf-8") as f:
             data = yaml_loader.load(f)
+        # Convert ruamel-specific scalar/map/seq types into native Python types
+        data = _ruamel_to_python(data)
     elif _YAML_BACKEND == 'pyyaml' and pyyaml is not None:
         with p.open("r", encoding="utf-8") as f:
             data = pyyaml.safe_load(f)  # type: ignore

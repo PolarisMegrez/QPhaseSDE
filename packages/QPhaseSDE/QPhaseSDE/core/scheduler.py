@@ -272,7 +272,14 @@ def run(
                             elif str(k) in ('Abs_Abs','abs_abs'):
                                 spec['kind'] = 'abs_abs'
                         elif str(k) in ('complex','modular'):
-                            per_kind_style = all_styles.get('psd') if isinstance(all_styles, dict) else None
+                            # profile.visualizer.psd is expected to be a mapping by kind
+                            # e.g. psd: { complex: { xlim: [...] }, modular: { ... } }
+                            psd_styles = all_styles.get('psd') if isinstance(all_styles, dict) else None
+                            if isinstance(psd_styles, dict):
+                                # prefer exact kind key, fallback to lowercase
+                                per_kind_style = psd_styles.get(str(k)) or psd_styles.get(str(k).lower())
+                            else:
+                                per_kind_style = None
                     _ = render_from_spec(spec, _to_numpy_array(ts_obj.data), t0=ts_obj.t0, dt=ts_obj.dt, outdir=outdir, style_overrides=per_kind_style, save=True)
 
         # Manifest

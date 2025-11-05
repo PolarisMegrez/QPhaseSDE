@@ -151,8 +151,24 @@ def run(model: SDEModel,
         key = backend if ":" in backend else f"backend:{backend}"
         try:
             be = registry.create(key)
-        except Exception:
-            raise QPSBackendError(f"[404] Unsupported backend '{backend}'. Ensure it is registered.")
+        except Exception as e:
+            # Provide a clearer, actionable error when the failure is caused by
+            # ImportError/DLL load issues (common with CuPy / missing CUDA libs).
+            msg = str(e) or ""
+            is_dll = "dll load failed" in msg.lower() or "curand" in msg.lower()
+            is_import_err = isinstance(e, ImportError) or "importerror" in type(e).__name__.lower()
+            # If CuPy was requested and import/DLL failed, give guidance how to proceed
+            if ("cupy" in key.lower() and (is_dll or is_import_err or "cupy" in msg.lower())):
+                raise QPSBackendError(
+                    f"[402] Failed to initialize backend '{backend}': {e}\n"
+                    "Likely cause: CuPy/CUDA runtime is unavailable or the installed CuPy wheel does not match your CUDA/Python environment.\n"
+                    "Options:\n"
+                    " - Switch to the CPU backend (recommended for troubleshooting): set `profile.backend: numpy` in your config or run with `--backend numpy`.\n"
+                    " - Install a CuPy wheel compatible with your CUDA version (e.g. `pip install cupy-cuda11x`) or install CUDA and ensure `CUDA_PATH` is set.\n"
+                    " - Use a Conda environment with a matching CUDA toolchain and CuPy build.\n"
+                )
+            # Otherwise keep the original registry-style message but include underlying detail for debugging
+            raise QPSBackendError(f"[404] Unsupported backend '{backend}'. Ensure it is registered. (Underlying error: {e})")
     else:
         be = backend
 
@@ -174,19 +190,39 @@ def run(model: SDEModel,
         pass
     # RNG strategy: if per_traj_seeds provided, spawn per-trajectory RNGs; else based on rng_stream
     rng: Any
-    if per_traj_seeds is not None and len(per_traj_seeds) == n_traj:
-        # derive RNGs from provided integer seeds using backend rng()
-        rng = [be.rng(int(s)) for s in per_traj_seeds]
-    elif master_seed is not None:
-        if str(rng_stream) == "per_trajectory":
-            try:
-                rng = be.spawn_rngs(int(master_seed), n_traj)
-            except Exception:
+    try:
+        if per_traj_seeds is not None and len(per_traj_seeds) == n_traj:
+            # derive RNGs from provided integer seeds using backend rng()
+            rng = [be.rng(int(s)) for s in per_traj_seeds]
+        elif master_seed is not None:
+            if str(rng_stream) == "per_trajectory":
+                try:
+                    rng = be.spawn_rngs(int(master_seed), n_traj)
+                except Exception:
+                    rng = be.rng(int(master_seed))
+            else:
                 rng = be.rng(int(master_seed))
         else:
-            rng = be.rng(int(master_seed))
-    else:
-        rng = be.rng(seed)
+            rng = be.rng(seed)
+    except Exception as e:
+        # Many CuPy failures surface as DLL/ImportError when curand or CUDA libs
+        # cannot be loaded. Surface a clear, actionable error instead of raw
+        # traceback from within CuPy internals.
+        msg = str(e) or ""
+        is_dll = "dll load failed" in msg.lower() or "curand" in msg.lower()
+        is_import_err = isinstance(e, ImportError) or "importerror" in type(e).__name__.lower()
+        if is_dll or is_import_err or "cupy" in msg.lower():
+            raise QPSBackendError(
+                f"[402] Backend RNG initialization failed for backend '{getattr(be, 'backend_name', lambda: str(backend))()}': {e}\n"
+                "Likely cause: CuPy/CUDA runtime is unavailable or mismatched with the installed CuPy wheel.\n"
+                "Options:\n"
+                " - Run with the CPU backend for now: set `profile.backend: numpy` (or use `--backend numpy`).\n"
+                " - Install a CuPy wheel matching your CUDA and Python version (e.g. `pip install cupy-cuda11x`), or use conda packages.\n"
+                " - Ensure CUDA is installed and `CUDA_PATH` is set on Windows.\n"
+                "For debugging, try: python -c \"import cupy; print(cupy.__version__); from cupy_backends.cuda.libs import curand\" to reproduce the failure."
+            )
+        # otherwise re-raise as generic backend error
+        raise QPSBackendError(f"[402] Failed to initialize RNG for backend '{backend}': {e}")
     sampler = make_noise_model(noise_spec, be)
 
     # Initialize state; broadcast single-vector IC to all trajectories using backend

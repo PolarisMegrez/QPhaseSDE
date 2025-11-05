@@ -1,45 +1,51 @@
-model:
-  module: models.vdp_two_mode
-  function: build_sde
-  params:
-    omega_a: 0.005
-    omega_b: 0.0
-    gamma_a: 2.0
-    gamma_b: 1.0
-    Gamma: 0.01
-    g: 0.5
-    D: 1.0
-  ic: 
-    - ["7.0+0.0j", "0.0-7.0j"]
-  noise:
-    kind: independent
-
 profile:
-  backend: numba       # B-class default
+  backend: cupy       # B-class default
   solver: euler        # B-class default
   save:
     root: runs
     save_every: 10
-    save_timeseries: false
-    save_psd_complex: true
+    save_timeseries: true
+    save_psd_complex: false
     save_psd_modular: false
   visualizer:
+    phase_portrait:
+      Re_Im:
+        linewidth: 0.8
+        alpha: 0.6
+      abs_abs:
+        linewidth: 0.8
+        alpha: 0.6
     psd:
-      legend: true
-      convention: symmetric
-      x_scale: linear
-      y_scale: linear
+      complex:
+        xlim: [-0.5, 0.5]
 
 run:
   time:
     dt: 0.001          # C-class required
-    steps: 500000      # shorter run to demo PSD
+    steps: 500000        # C-class required
   trajectories:
-    n_traj: 100        # C-class required
+    n_traj: 1000         # C-class required
     master_seed: 42    # C-class (optional); used to derive per-trajectory seeds
-  visualizer:
-    psd:
-      - kind: complex
-        modes: [0, 1]
-        xlim: [-0.5, 0.5]
-        t_range: [20.0, 100.0]
+
+jobs:
+  - name: vdp_psd
+    module: models.vdp_two_mode
+    function: build_sde
+    params:
+      omega_a: 0.005
+      omega_b: 0.0
+      gamma_a: 2.0
+      gamma_b: 1.0
+      Gamma: 0.01
+      g: 0.5
+      D: 1.0
+    ic: 
+      - ["7.0+0.0j", "0.0-7.0j"]
+      - ["0.0-7.0j", "7.0+0.0j"]
+    noise:
+      kind: independent
+    visualizer:
+      psd:
+        - kind: complex
+          modes: [0, 1]
+          t_range: [20.0, 100.0]
