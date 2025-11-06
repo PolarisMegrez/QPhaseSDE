@@ -181,7 +181,7 @@ def phase(
 	if not (specs or psd_specs):
 		raise typer.BadParameter("No viz specs found. Use use_snapshot=True with saved viz, or pass --specs-json.")
 
-	service_mod = importlib.import_module('QPhaseSDE.visualizers.service')
+	service_mod = importlib.import_module('QPhaseSDE.visualizer.service')
 	render_from_spec = getattr(service_mod, 'render_from_spec')
 
 	saved_all = []
@@ -329,7 +329,7 @@ def psd(
 	if not psd_specs:
 		raise typer.BadParameter("No PSD specs found. Use use_snapshot=True with saved viz, or pass --specs-json.")
 
-	service_mod = importlib.import_module('QPhaseSDE.visualizers.service')
+	service_mod = importlib.import_module('QPhaseSDE.visualizer.service')
 	render_from_spec = getattr(service_mod, 'render_from_spec')
 
 	saved_all = []

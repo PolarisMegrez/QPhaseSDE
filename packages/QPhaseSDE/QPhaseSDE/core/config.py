@@ -340,7 +340,7 @@ def make_viz_job(viz: VizJobArgs, common: VisualizerConfig) -> VizJob:
         styles=dict(common.styles or {}),
     )
 
-class ConfigPipeline:
+class ConfigPipeline: #2N+2+1(X)
     def __init__(self, user_cfg: Optional[Mapping[str, Any] | str | Path] = None,
                  *,
                  engine_config: Optional[EngineConfig] = None,

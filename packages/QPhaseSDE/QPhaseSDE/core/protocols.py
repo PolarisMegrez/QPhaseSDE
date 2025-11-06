@@ -2,7 +2,7 @@
 QPhaseSDE: Core Protocols
 -------------------------
 Minimal abstract interfaces (Protocols and lightweight data classes) shared
-across all domains — backends, states, integrators, noise models, visualizers,
+across all domains — backends, states, integrators, noise models, visualizer,
 and IO. This module is dependency-light and must not import numpy, torch,
 jax, or similar libraries.
 

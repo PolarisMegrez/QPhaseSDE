@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import pytest
-from QPhaseSDE.visualizers.specs import PhasePortraitSpec
+from QPhaseSDE.visualizer.specs import PhasePortraitSpec
 
 
 def test_phase_spec_validation_re_im_ok():

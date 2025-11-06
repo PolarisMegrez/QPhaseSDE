@@ -25,7 +25,7 @@ from QPhaseSDE.core.config import (
 	ConfigPipeline,
 	get_default,
 )
-from QPhaseSDE.core.scheduler import run as scheduler_run
+from QPhaseSDE.core.scheduler import launch as scheduler_run
 
 
 app = typer.Typer()

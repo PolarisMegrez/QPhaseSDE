@@ -5,7 +5,7 @@ Discover and register visualizer plugins provided by third-party packages or
 local modules.
 
 Behavior
-- Entry points: scan the ``qphasesde.visualizers`` group and lazily register
+- Entry points: scan the ``qphasesde.visualizer`` group and lazily register
     each discovered target by dotted path.
 - Module paths: import the given modules for side effects; modules are expected
     to perform their own registration during import.
@@ -28,7 +28,7 @@ __all__ = [
 from ..core.registry import namespaced
 register, register_lazy = namespaced("visualizer")
 
-def register_entry_points(group: str = "qphasesde.visualizers") -> None:
+def register_entry_points(group: str = "qphasesde.visualizer") -> None:
     """
     Discover and register visualizer plugins via Python entry points.
 
@@ -37,7 +37,7 @@ def register_entry_points(group: str = "qphasesde.visualizers") -> None:
 
     Parameters
     ----------
-    group : str, default "qphasesde.visualizers"
+    group : str, default "qphasesde.visualizer"
         Entry point group to scan for plugins.
 
     Returns
@@ -46,7 +46,7 @@ def register_entry_points(group: str = "qphasesde.visualizers") -> None:
 
     Examples
     --------
-    >>> from QPhaseSDE.visualizers.plugins import register_entry_points
+    >>> from QPhaseSDE.visualizer.plugins import register_entry_points
     >>> register_entry_points()
     """
     try:
@@ -65,7 +65,7 @@ def register_from_paths(paths: list[str]) -> None:
     """
     Import and register visualizer plugins from a list of module paths.
 
-    Each module is imported for side effects; it should call visualizers.register.register(...).
+    Each module is imported for side effects; it should call visualizer.register.register(...).
     Faulty imports are ignored.
 
     Parameters
@@ -79,12 +79,12 @@ def register_from_paths(paths: list[str]) -> None:
 
     Examples
     --------
-    >>> from QPhaseSDE.visualizers.plugins import register_from_paths
+    >>> from QPhaseSDE.visualizer.plugins import register_from_paths
     >>> register_from_paths(["myplugin.module", "otherplugin.module"])
     """
     for path in paths:
         try:
-            # import for side effects; module should call visualizers.register.register(...)
+            # import for side effects; module should call visualizer.register.register(...)
             import_module(path)
         except Exception:
             pass

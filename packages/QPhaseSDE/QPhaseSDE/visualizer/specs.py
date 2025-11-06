@@ -2,7 +2,7 @@
 QPhaseSDE: Visualization specs
 ------------------------------
 Pydantic models that describe the input schema for visualizer requests used
-by the visualizer service and renderers.
+by the visualizer service and plotters.
 
 Behavior
 - Provide strict validation and light normalization (e.g., defaults) before a

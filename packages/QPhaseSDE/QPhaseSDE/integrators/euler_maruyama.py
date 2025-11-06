@@ -9,10 +9,6 @@ Behavior
 - Backend-agnostic step rule ``dy = a(y,t)·dt + L(y,t) @ dW``; contraction over
   noise channels is specialized per backend when possible. Complex noise bases
   are expanded to an equivalent real basis prior to contraction.
-
-Notes
------
-- The short-term alias 'milstein' may map to Euler–Maruyama in this release.
 """
 
 from typing import Dict, Any, Callable, Optional

@@ -23,7 +23,7 @@ visualizer:
       legend: true
     phase_portrait:
       plot_every: 1
-  namespace: "visualizer"      # registry namespace for renderers (normal, documented default)
+  namespace: "visualizer"      # registry namespace for plotters (normal, documented default)
 
 io:
   yaml_preference: "ruamel"        # preferred YAML lib for user configs

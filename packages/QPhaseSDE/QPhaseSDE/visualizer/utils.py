@@ -1,7 +1,7 @@
 """
 QPhaseSDE: Visualizer utilities
 -------------------------------
-Shared helpers used by the visualizer service and renderers.
+Shared helpers used by the visualizer service and plotters.
 
 Behavior
 - Compute short, stable identifiers from spec content for figure/cache naming.

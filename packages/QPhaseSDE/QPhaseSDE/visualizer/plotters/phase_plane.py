@@ -97,4 +97,4 @@ def render_phase_portrait(
         raise QPSConfigError(f'[523] Unknown phase kind: {kind}')
 
 
-## Note: Validation moved to Pydantic models in visualizers/specs.py.
+## Note: Validation moved to Pydantic models in visualizer/specs.py.

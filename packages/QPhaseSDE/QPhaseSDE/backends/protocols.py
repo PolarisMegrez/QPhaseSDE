@@ -32,7 +32,7 @@ class ExtendedBackend(BackendBase, Protocol):
 
     Provides non-essential helpers that backends may expose in addition to the
     minimal `BackendBase` surface. Core components don't require these methods,
-    but states, visualizers, or analysis code can opportunistically use them
+    but states, visualizer, or analysis code can opportunistically use them
     when present to improve performance or ergonomics.
 
     Methods

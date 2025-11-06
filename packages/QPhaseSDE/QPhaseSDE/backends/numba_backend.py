@@ -183,6 +183,9 @@ class NumbaBackend(Backend):
 	# Ops / linalg
 	def einsum(self, subscripts: str, *operands: Any) -> Any:
 		# Hot paths: match exact patterns to use Numba kernels
+		# TODO: Consider prange parallelization for large T/N in kernels above; the
+		# current implementation is single-threaded but compiled. Real gains depend
+		# on CPU/BLAS availability and problem sizes. Keep fallbacks to NumPy einsum.
 		if subscripts == 'tnm,tm->tn' and len(operands) == 2:
 			L = operands[0]
 			dW = operands[1]

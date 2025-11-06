@@ -134,6 +134,15 @@ class GaussianNoiseModel:
             for r in rng:  # type: ignore[assignment]
                 rows.append(self.backend.randn(r, (M,), dtype=float))
             # Prefer backend.stack if available
+            # NOTE: This per-trajectory loop preserves independent RNG streams
+            # (strict reproducibility) but can be a hotspot for large n_traj.
+            # Future optimization ideas:
+            #  - Provide a vectorized sampling path that accepts a seed array or
+            #    uses a backend-supported batched RNG to draw (n_traj, M) in one call.
+            #  - For the Numba backend, a njit+prange kernel could assemble rows in
+            #    parallel while consuming per-trajectory generators.
+            #  - Expose an engine-level knob to switch to a single batched RNG stream
+            #    (faster) when strict per-trajectory invariance is not required.
             try:
                 z = self.backend.stack(tuple(rows), axis=0)  # type: ignore[attr-defined]
             except Exception:

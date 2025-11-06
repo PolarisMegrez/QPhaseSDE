@@ -17,14 +17,14 @@ Semantics: view returns aliasing views when possible; copy returns independent s
 - backends/protocols.py: `ExtendedBackend` with optional helpers like `stack`, `to_device`, `complex_view`, `real_imag_split`, and `capabilities()`.
 - integrators/protocols.py: `Integrator.step(y, t, dt, model, noise, backend)`; optional `reset()`, `supports_*` feature flags.
 - noise_models/protocols.py: `NoiseModel` consuming `NoiseSpecLike` and producing per-step increments.
-- visualizers/protocols.py: `Renderer` with `validate(spec)` and `render(ax_or_buffer, data, spec, style)` returning standard metadata.
+- visualizer/protocols.py: `Renderer` with `validate(spec)` and `render(ax_or_buffer, data, spec, style)` returning standard metadata.
 - states/protocols.py: `ExtendedState` for higher-level operations like `slice()`, `view_complex_as_real()`, `persist()`.
 
 ## Visualizers architecture
 
 - Spec layer (Pydantic) validates spec inputs early.
 - Renderer layer implements drawing against a provided axis/buffer.
-- Service layer selects renderer via registry, merges styles, renders and saves figures, and returns metadata. Supports function-style and class-style renderers.
+- Service layer selects renderer via registry, merges styles, renders and saves figures, and returns metadata. Supports function-style and class-style plotters.
 
 Current built-ins and conventions:
 - Phase portraits: kinds `re_im` and `abs_abs` via `visualizer:phase_portrait`
@@ -35,7 +35,7 @@ Current built-ins and conventions:
 
 ## Registration and plugins
 
-- Single central registry (`core/registry.py`) with domain aliases (e.g., `visualizers/register.py`).
+- Single central registry (`core/registry.py`) with domain aliases (e.g., `visualizer/register.py`).
 - Lazy imports supported; rich metadata recorded (registered_at, builder_type, delayed_import, module_path).
 - Plugins can register via entry points or dynamic import paths (future work).
 
@@ -48,7 +48,7 @@ render_pp = registry.create("visualizer:phase_portrait")
 meta = render_pp(ax, data, {"kind":"re_im", "modes":[0]}, {"linewidth":0.8})
 
 # Use the service to handle validation, slicing, and saving
-from QPhaseSDE.visualizers.service import render_from_spec
+from QPhaseSDE.visualizer.service import render_from_spec
 render_from_spec({"kind":"psd", "modes":[0,1]}, data, t0=0.0, dt=1e-3, outdir=Path("out"), style_overrides={"x_scale":"log", "y_scale":"log"})
 ```
 

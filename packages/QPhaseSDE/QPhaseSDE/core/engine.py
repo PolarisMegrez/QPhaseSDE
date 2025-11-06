@@ -23,10 +23,20 @@ Behavior
 
 Notes
 -----
-- The solver key 'milstein' currently aliases to Euler–Maruyama in this
-  release.
 - Passing a backend name uses the registry; passing an instance bypasses
-  lookup.
+    lookup.
+
+Implementation notes / future work
+----------------------------------
+- Progress reporting is implemented here (backend-agnostic) via a lightweight
+    periodic callback. This keeps contracts simple but implies a Python-level
+    per-step loop. For GPU-heavy backends (e.g., CuPy), consider introducing an
+    optional "chunked advance" API in integrators (e.g., advance(y, t, dt, steps,
+    ...)) that performs many steps per kernel and calls the same progress callback
+    at chunk boundaries to reduce host overhead while preserving live ETA.
+- RNG strategy supports per-trajectory streams for strict reproducibility. This
+    can incur Python overhead when noise models iterate per trajectory; a vectorized
+    sampling fast path remains a prime optimization target.
 """
 
 from typing import Dict, Optional, Callable, List, Any
@@ -260,12 +270,6 @@ def run(model: SDEModel,
     warmup_time_thr = max(0.0, float(warmup_min_seconds))
     # Resolve integrator once per run (avoid per-step registry lookup)
     key = solver if ":" in solver else f"integrator:{solver}"
-    # Temporary deprecation notice for milstein alias in v0.1.3
-    try:
-        if str(solver).lower() == "milstein":
-            get_logger().warning("[994] 'milstein' currently aliases to Euler–Maruyama in v0.1.3; true Milstein will arrive in a future release.")
-    except Exception:
-        pass
     integrator = registry.create(key)
 
     for k in range(1, steps+1):

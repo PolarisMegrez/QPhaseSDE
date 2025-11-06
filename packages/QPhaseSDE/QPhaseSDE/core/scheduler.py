@@ -22,6 +22,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 import importlib
@@ -35,6 +36,8 @@ from typing import cast as _cast
 from .config import (
     ConfigPipeline,
     EngineJob,
+    get_system,
+    get_default,
 )
 from .errors import QPSConfigError, get_logger
 from .engine import run as engine_run
@@ -42,7 +45,7 @@ from .protocols import NoiseSpec
 from ..io.results import save_time_series, save_manifest, save_npz
 from ..io.snapshot import write_run_snapshot
 from ..analysis import __name__ as _analysis_pkg  # ensure package import side-effects
-from ..visualizers.service import render_from_spec
+from ..visualizer.service import render_from_spec
 from ..core.xputil import to_numpy as _to_numpy_array
 from ..states.numpy_state import TrajectorySet as _NpTS
 
@@ -71,7 +74,7 @@ class RunResult:
     job_name: str
 
 
-def run(
+def launch(
     pipeline: ConfigPipeline,
     *,
     on_progress: Optional[
@@ -175,15 +178,52 @@ def run(
         for ic_idx, ic_vec in enumerate(ic_sets):
             y0 = np.asarray(ic_vec, dtype=np.complex128)
             # Fast, quiet progress callback (scheduler keeps logs slim)
+            progress_last_len = 0
             def _progress_cb(step_done: int, steps_total: int, eta_seconds: float, ic_i: int, ic_n: int):
-                if (step_done % max(1, int(0.1 * steps_total))) == 0:
-                    try:
-                        pct = 100.0 * float(step_done) / float(steps_total)
-                        log.info(f"[{run_id}] [IC {ic_i+1}/{ic_n}] {pct:5.1f}%")
-                        if callable(on_progress):
-                            on_progress(ej.name or f"job_{j_idx:02d}", ic_i, ic_n, step_done, steps_total, eta_seconds)
-                    except Exception:
-                        pass
+                # Overwrite the same terminal line instead of emitting a new log record each time.
+                # Engine already throttles by wall-time interval (~1s).
+                nonlocal progress_last_len
+                try:
+                    pct = 100.0 * float(step_done) / float(steps_total)
+                    if eta_seconds == eta_seconds:  # non-NaN
+                        msg = f"[{run_id}] [IC {ic_i+1}/{ic_n}] {pct:5.1f}% ETA {eta_seconds:0.1f}s"
+                    else:
+                        msg = f"[{run_id}] [IC {ic_i+1}/{ic_n}] {pct:5.1f}%"
+                    pad = max(0, progress_last_len - len(msg))
+                    sys.stdout.write("\r" + msg + (" " * pad))
+                    sys.stdout.flush()
+                    progress_last_len = len(msg)
+                    if callable(on_progress):
+                        on_progress(ej.name or f"job_{j_idx:02d}", ic_i, ic_n, step_done, steps_total, eta_seconds)
+                except Exception:
+                    pass
+            # Resolve progress knobs with precedence: system.yaml > EngineConfig > defaults/dynamic
+            prog_sys = get_system("engine.progress", {}) or {}
+            prog_cfg = dict(getattr(engine_config, 'progress', {}) or {})
+            # interval_seconds: system > engine_config > defaults.yaml > fallback 1.0
+            interval_seconds = (
+                prog_sys.get('interval_seconds', None)
+                if isinstance(prog_sys, dict) else None
+            )
+            if interval_seconds is None:
+                interval_seconds = prog_cfg.get('interval_seconds', get_default('engine.progress.interval_seconds', 1.0))
+            # warmup_min_steps: system > engine_config > dynamic(1% steps, >=10)
+            warmup_steps = (
+                prog_sys.get('warmup_min_steps', None)
+                if isinstance(prog_sys, dict) else None
+            )
+            if warmup_steps is None:
+                warmup_steps = prog_cfg.get('warmup_min_steps', None)
+            if warmup_steps is None:
+                warmup_steps = max(10, int(0.01 * int(time_spec['steps'])))
+            # warmup_min_seconds: system > engine_config > defaults.yaml > fallback 0.0
+            warmup_seconds = (
+                prog_sys.get('warmup_min_seconds', None)
+                if isinstance(prog_sys, dict) else None
+            )
+            if warmup_seconds is None:
+                warmup_seconds = prog_cfg.get('warmup_min_seconds', get_default('engine.progress.warmup_min_seconds', 0.0))
+
             ts_obj = engine_run(
                 model=model,
                 ic=y0,
@@ -199,12 +239,21 @@ def run(
                 return_stride=1,
                 rng_stream=rng_stream,
                 progress_cb=_progress_cb,
-                progress_interval_seconds=1.0,
+                progress_interval_seconds=float(interval_seconds),
                 ic_index=ic_idx,
                 ic_total=len(ic_sets),
-                warmup_min_steps=max(10, int(0.01 * int(time_spec['steps']))),
-                warmup_min_seconds=1.0,
+                warmup_min_steps=int(warmup_steps),
+                warmup_min_seconds=float(warmup_seconds),
             )
+
+            # Ensure the progress line is finalized for this IC
+            try:
+                if progress_last_len > 0:
+                    sys.stdout.write("\n")
+                    sys.stdout.flush()
+                    progress_last_len = 0
+            except Exception:
+                pass
 
             # Save downsampled time series if enabled
             if bool((misc.get('save', {}) or {}).get('save_timeseries', False)):
@@ -293,6 +342,3 @@ def run(
                 pass
 
     return results
-
-# Backward-compatible alias
-launch = run

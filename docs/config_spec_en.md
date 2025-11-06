@@ -96,7 +96,7 @@ profile:
 
 ## 3. run (C-class, required where specified)
 
-Defines the numeric integration and the requested visualizers.
+Defines the numeric integration and the requested visualizer.
 
 Fields:
 - time:

@@ -17,10 +17,10 @@ Notes
 from typing import Any, Dict, Mapping, Protocol
 
 __all__ = [
-  "Renderer",
+  "Plotter",
 ]
 
-class Renderer(Protocol):
+class Plotter(Protocol):
   """
   Protocol for visualizer renderer implementations.
 

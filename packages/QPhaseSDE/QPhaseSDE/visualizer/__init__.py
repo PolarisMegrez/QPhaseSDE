@@ -1,7 +1,7 @@
 """
 QPhaseSDE: Visualizers Subpackage
 ---------------------------------
-Figure renderers and services for simulation outputs (phase portraits, PSD),
+Figure plotters and services for simulation outputs (phase portraits, PSD),
 validated by specs and plugged via the central registry.
 
 Usage
@@ -10,7 +10,7 @@ Registry keys:
 `visualizer:phase_portrait` | `visualizer:psd`
 
 Service:
->>> from QPhaseSDE.visualizers.service import render_from_spec
+>>> from QPhaseSDE.visualizer.service import render_from_spec
 
 Notes
 -----
@@ -25,7 +25,7 @@ from ..core.registry import register_lazy
 register_lazy(
 	"visualizer",
 	"phase_portrait",
-	"QPhaseSDE.visualizers.renderers.phase_plane:render_phase_portrait",
+	"QPhaseSDE.visualizer.plotters.phase_plane:render_phase_portrait",
 	return_callable=True,
 )
 
@@ -33,7 +33,7 @@ register_lazy(
 register_lazy(
 	"visualizer",
 	"psd",
-	"QPhaseSDE.visualizers.renderers.psd:render_psd",
+	"QPhaseSDE.visualizer.plotters.psd:render_psd",
 	return_callable=True,
 )
 

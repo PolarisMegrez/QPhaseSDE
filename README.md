@@ -99,11 +99,11 @@ Notes for YAML users
 
 ## Project structure
 
-- `packages/QPhaseSDE` — core library (engine, protocols, backends, integrators, IO, visualizers)
+- `packages/QPhaseSDE` — core library (engine, protocols, backends, integrators, IO, visualizer)
   - `core/` — minimal protocols, registry, and integration engine
   - `backends/` — backend registrations (NumPy built‑in)
   - `integrators/` — Euler–Maruyama (Milstein alias)
-  - `visualizers/` — Spec (Pydantic) → Renderer → Service; PSD and phase portraits
+  - `visualizer/` — Spec (Pydantic) → Renderer → Service; PSD and phase portraits
   - `analysis/` — reusable analysis (e.g., PSD computation)
   - `io/` — results saving/loading; snapshots
 - `packages/QPhaseSDE_cli` — Typer‑based CLI (`qps`) for running and analyzing
@@ -113,7 +113,7 @@ Notes for YAML users
 - `docs/` — configuration specs and user guides (EN/ZH)
 - `tests/` — local smoke tests
 
-Internals rely on a central registry (`QPhaseSDE.core.registry.registry`) to create pluggable components by name (e.g., `visualizer:psd`). The visualizer service validates specs, slices time windows, merges styles, dispatches renderers, and saves images.
+Internals rely on a central registry (`QPhaseSDE.core.registry.registry`) to create pluggable components by name (e.g., `visualizer:psd`). The visualizer service validates specs, slices time windows, merges styles, dispatches plotters, and saves images.
 
 ## Notes
 

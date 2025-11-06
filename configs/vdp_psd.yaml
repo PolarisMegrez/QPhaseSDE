@@ -1,9 +1,9 @@
 profile:
-  backend: cupy       # B-class default
+  backend: numba       # B-class default
   solver: euler        # B-class default
   save:
     root: runs
-    save_every: 10
+    save_every: 1
     save_timeseries: true
     save_psd_complex: false
     save_psd_modular: false
@@ -21,10 +21,10 @@ profile:
 
 run:
   time:
-    dt: 0.001          # C-class required
-    steps: 500000        # C-class required
+    dt: 0.1          # C-class required
+    steps: 50000        # C-class required
   trajectories:
-    n_traj: 1000         # C-class required
+    n_traj: 5000         # C-class required
     master_seed: 42    # C-class (optional); used to derive per-trajectory seeds
 
 jobs:
@@ -41,11 +41,10 @@ jobs:
       D: 1.0
     ic: 
       - ["7.0+0.0j", "0.0-7.0j"]
-      - ["0.0-7.0j", "7.0+0.0j"]
     noise:
       kind: independent
     visualizer:
       psd:
         - kind: complex
           modes: [0, 1]
-          t_range: [20.0, 100.0]
+          t_range: [1000.0, 5000.0]

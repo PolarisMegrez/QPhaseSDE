@@ -15,7 +15,7 @@ Behavior
 Notes
 -----
 - These utilities are backend-agnostic with NumPy implementations and are used
-    by visualizers as well as analysis pipelines.
+    by visualizer as well as analysis pipelines.
 """
 
 from typing import Dict, List, Tuple
